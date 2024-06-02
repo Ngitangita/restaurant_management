@@ -1,51 +1,46 @@
 package com.example.restorationmanagement.service.Imp;
 
+import com.example.restorationmanagement.dto.request.RestaurantRequest;
+import com.example.restorationmanagement.dto.response.RestaurantResponse;
 import com.example.restorationmanagement.entities.Restaurant;
-import com.example.restorationmanagement.exception.BadRequestException;
-import com.example.restorationmanagement.exception.InternalServerException;
-import com.example.restorationmanagement.exception.NotFoundException;
+import com.example.restorationmanagement.entities.Stock;
+import com.example.restorationmanagement.enumes.MovementType;
+import com.example.restorationmanagement.repositories.IngredientRepository;
 import com.example.restorationmanagement.repositories.RestaurantRepository;
+import com.example.restorationmanagement.repositories.StockRepository;
 import com.example.restorationmanagement.service.RestaurantService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Instant;
 
+@RequiredArgsConstructor
 @Service
 public class RestaurantServiceImp implements RestaurantService {
     private final RestaurantRepository restaurantRepository;
+    private final IngredientRepository ingredientRepository;
+    private final StockRepository stockRepository;
 
-    public RestaurantServiceImp(RestaurantRepository restaurantRepository) {
-        this.restaurantRepository = restaurantRepository;
-    }
 
-    @Override
-    public Restaurant createRestaurant(Restaurant restaurant) {
-        try {
-            if (restaurant.getId() == null){
-                return restaurantRepository.create(restaurant);
-            }
-            throw new BadRequestException("Restaurant ID must be null for creation");
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
-        }
-    }
 
     @Override
-    public List<Restaurant> findAll() {
-        try {
-            return restaurantRepository.findAll();
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
+    public RestaurantResponse create(RestaurantRequest restaurantRequest) {
+        var restaurant = Restaurant.builder().location(restaurantRequest.getLocation()).build();
+        var savedRestaurant = restaurantRepository.create(restaurant);
+        var ingredients = ingredientRepository.findAll();
+
+        for (var ingredient: ingredients){
+            var stock = Stock.builder()
+                    .restaurant(savedRestaurant)
+                    .ingredient(ingredient)
+                    .quantity(00.0)
+                    .movementType(MovementType.ENTREE)
+                    .movementDate(Instant.now())
+                    .build();
+            stockRepository.create(stock);
         }
+     return new RestaurantResponse(savedRestaurant.getId(), savedRestaurant.getLocation());
     }
 
-    @Override
-    public Restaurant findRestaurantById(Integer id) {
-        try {
-            return restaurantRepository.findById(id).orElseThrow(() -> new NotFoundException("Restaurant not found"));
-        } catch (NotFoundException e) {
-            throw new InternalServerException(e.getMessage());
-        }
-    }
 
 }

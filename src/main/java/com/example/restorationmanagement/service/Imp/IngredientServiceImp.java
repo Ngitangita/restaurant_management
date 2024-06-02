@@ -1,75 +1,70 @@
 package com.example.restorationmanagement.service.Imp;
 
+import com.example.restorationmanagement.dto.request.IngredientRequest;
+import com.example.restorationmanagement.dto.response.IngredientResponse;
 import com.example.restorationmanagement.entities.Ingredient;
-import com.example.restorationmanagement.exception.BadRequestException;
-import com.example.restorationmanagement.exception.InternalServerException;
+import com.example.restorationmanagement.entities.Stock;
+import com.example.restorationmanagement.entities.Unit;
+import com.example.restorationmanagement.enumes.MovementType;
 import com.example.restorationmanagement.exception.NotFoundException;
 import com.example.restorationmanagement.repositories.IngredientRepository;
+import com.example.restorationmanagement.repositories.RestaurantRepository;
+import com.example.restorationmanagement.repositories.StockRepository;
+import com.example.restorationmanagement.repositories.UnitRepository;
 import com.example.restorationmanagement.service.IngredientService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Instant;
 
-
+@RequiredArgsConstructor
 @Service
 public class IngredientServiceImp implements IngredientService {
-   private final IngredientRepository ingredientRepository;
-
-    public IngredientServiceImp(IngredientRepository ingredientRepository) {
-        this.ingredientRepository = ingredientRepository;
-    }
+    private final IngredientRepository ingredientRepository;
+    private final StockRepository stockRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final UnitRepository unitRepository;
 
     @Override
-    public Ingredient createIngredient(Ingredient ingredient) {
-        try {
-            if (ingredient.getId() == null){
-                return ingredientRepository.create((ingredient));
-            }
-            throw new BadRequestException("Ingredient ID must be null for creation");
-        } catch (BadRequestException e) {
-            throw new InternalServerException(e.getMessage());
+    public IngredientResponse create(IngredientRequest toCreate) {
+        var ingredient = Ingredient.builder()
+                .name(toCreate.getName())
+                .costPrice(toCreate.getCostPrice())
+                .quantity(toCreate.getQuantity())
+                .build();
+
+        if (toCreate.getUnitName() != null && toCreate.getUnitId() != null){
+            throw new NotFoundException("Unit invalid");
         }
-    }
 
-    @Override
-    public Ingredient findIngredientById(Integer id) {
-        return ingredientRepository.findById(id).orElseThrow(() -> new NotFoundException("Ingredient not found"));
-
-    }
-
-    @Override
-    public List<Ingredient> findAll() {
-        try {
-            return ingredientRepository.findAll();
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
+        if (toCreate.getUnitName() != null) {
+            var savedUnit = unitRepository.create(Unit.builder().name(toCreate.getUnitName()).build());
+            ingredient.setUnit(savedUnit);
         }
-    }
 
-    @Override
-    public Ingredient updateIngredient(Integer id, Ingredient ingredient) {
-        try {
-            final var foundIngredientOptional = ingredientRepository.findById(id);
-            if (foundIngredientOptional.isPresent()){
-                var foundIngredient = foundIngredientOptional.get();
-                foundIngredient.setName(ingredient.getName());
-                foundIngredient.setCostPrice(ingredient.getCostPrice());
-                foundIngredient.setQuantity(ingredient.getQuantity());
-                foundIngredient.setUnit(ingredient.getUnit());
-                return ingredientRepository.update(foundIngredient);
-            }
-            throw new NotFoundException("Ingredient not found");
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
+        if (toCreate.getUnitId() != null) {
+            var savedUnit = unitRepository.findById(toCreate.getUnitId()).orElseThrow(() -> new NotFoundException("Unit not found"));
+            ingredient.setUnit(savedUnit);
         }
-    }
 
-    @Override
-    public Ingredient destroyIngredientById(Integer id) {
-        try {
-            return ingredientRepository.delete(id).orElseThrow(() -> new NotFoundException("Ingredient not found"));
-        } catch (Exception e) {
-            throw new InternalServerException(e.getMessage());
+        Ingredient savedIngredient = ingredientRepository.create(ingredient);
+        var restaurants = restaurantRepository.findAll();
+        for (var restaurant: restaurants){
+            var stock = Stock.builder()
+                    .restaurant(restaurant)
+                    .ingredient(savedIngredient)
+                    .quantity(00.0)
+                    .movementType(MovementType.ENTREE)
+                    .movementDate(Instant.now())
+                    .build();
+            stockRepository.create(stock);
         }
+
+        return IngredientResponse.builder()
+                .name(savedIngredient.getName())
+                .id(savedIngredient.getId())
+                .costPrice(savedIngredient.getCostPrice())
+                .quantity(savedIngredient.getQuantity())
+                .build();
     }
 }

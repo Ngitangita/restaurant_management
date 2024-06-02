@@ -1,11 +1,8 @@
 package com.example.restorationmanagement.service;
 
-import com.example.restorationmanagement.entities.Menu;
-
-import java.util.List;
+import com.example.restorationmanagement.dto.request.MenuRequest;
+import com.example.restorationmanagement.dto.response.MenuResponse;
 
 public interface MenuService {
-    Menu createdMenu(Menu menu);
-    List<Menu> findAll();
-    Menu findMenuById(Integer id);
+    MenuResponse create(MenuRequest toCreate);
 }

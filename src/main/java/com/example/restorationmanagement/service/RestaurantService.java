@@ -1,11 +1,8 @@
 package com.example.restorationmanagement.service;
 
-import com.example.restorationmanagement.entities.Restaurant;
-
-import java.util.List;
+import com.example.restorationmanagement.dto.request.RestaurantRequest;
+import com.example.restorationmanagement.dto.response.RestaurantResponse;
 
 public interface RestaurantService {
-    Restaurant createRestaurant(Restaurant restaurant);
-    List<Restaurant> findAll();
-    Restaurant findRestaurantById(Integer id);
+    RestaurantResponse create(RestaurantRequest toCreate);
 }

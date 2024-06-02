@@ -1,5 +1,6 @@
 package com.example.restorationmanagement.repositories;
 
+import com.example.restorationmanagement.dto.request.QuantityIngredientRequest;
 import com.example.restorationmanagement.entities.Stock;
 
 import java.util.List;
@@ -11,4 +12,7 @@ public interface StockRepository {
     Optional<Stock> findById(Integer id);
     Stock update(Stock toUpdate);
     Optional<Stock> delete(Integer id);
+    Optional<Stock> findStockByRestaurantIdAndIngredientId(Integer ingredientId, Integer restaurantId);
+
+    Integer hasQuantityInsufficient(Integer restaurantId, List<QuantityIngredientRequest> quantityIngredients);
 }

@@ -1,5 +1,6 @@
 package com.example.restorationmanagement.repositories.imp;
 
+import com.example.restorationmanagement.dto.request.QuantityIngredientRequest;
 import com.example.restorationmanagement.entities.Ingredient;
 import com.example.restorationmanagement.entities.Restaurant;
 import com.example.restorationmanagement.entities.Stock;
@@ -105,6 +106,49 @@ public class StockRepositoryImp implements StockRepository {
             throw new RuntimeException(e);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public Optional<Stock> findStockByRestaurantIdAndIngredientId(Integer ingredientId, Integer restaurantId) {
+        final var query = "SELECT * FROM stock WHERE ingredient_id = ? AND restaurant_id = ?";
+        try (final var stmt = connection.prepareStatement(query)){
+            stmt.setInt(1, ingredientId);
+            stmt.setInt(2, restaurantId);
+            try (final var rs = stmt.executeQuery()){
+                if (rs.next()){
+                    return Optional.of(mapResutlSetToStock(rs));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Integer hasQuantityInsufficient(Integer restaurantId, List<QuantityIngredientRequest> quantityIngredients) {
+        final var query = "SELECT * FROM stock WHERE ingredient_id = ? AND restaurant_id = ?";
+        try (final var stmt = connection.prepareStatement(query)){
+            for (var q: quantityIngredients){
+                stmt.setInt(1, q.getIngredientId());
+                stmt.setInt(2, restaurantId);
+                var rs = stmt.executeQuery();
+                while (rs.next()){
+                    stmt.setInt(1, q.getIngredientId());
+                    stmt.setInt(2, restaurantId);
+                    var quantity = rs.getDouble("quantity");
+                    if (quantity < q.getQuantity()){
+                        return rs.getInt("ingredient_id");
+                    }
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Stock mapResutlSetToStock(ResultSet rs) throws SQLException {

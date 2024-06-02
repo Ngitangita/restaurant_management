@@ -1,36 +1,21 @@
 package com.example.restorationmanagement.controller;
 
-import com.example.restorationmanagement.entities.Restaurant;
+import com.example.restorationmanagement.dto.request.RestaurantRequest;
+import com.example.restorationmanagement.dto.response.RestaurantResponse;
 import com.example.restorationmanagement.service.RestaurantService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@CrossOrigin
+@RequiredArgsConstructor
 @RequestMapping("/restaurants")
 public class RestaurantController {
     private final RestaurantService restaurantService;
 
-    public RestaurantController(RestaurantService restaurantService) {
-        this.restaurantService = restaurantService;
-    }
-
     @PostMapping("/create")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public Restaurant createRestaurant(@RequestBody Restaurant restaurant){
-        return restaurantService.createRestaurant(restaurant);
+    @ResponseStatus(HttpStatus.CREATED)
+    public RestaurantResponse creatRestaurant(@RequestBody RestaurantRequest restaurantRequest){
+        return restaurantService.create(restaurantRequest);
     }
-
-    @GetMapping
-    public List<Restaurant> getAllRestaurants(){
-        return restaurantService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public Restaurant getRestaurantById(@PathVariable Integer id){
-        return restaurantService.findRestaurantById(id);
-    }
-
-    }
+}
